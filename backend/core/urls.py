@@ -7,7 +7,6 @@ from request.views import RequestViewSet
 
 
 router = DefaultRouter()
-
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'departments', DepartmentViewSet, basename='department')
 router.register(r'requests', RequestViewSet, basename='request')
@@ -15,5 +14,5 @@ router.register(r'requests', RequestViewSet, basename='request')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
-    path('api/auth/token/', CustomAuthToken.as_view(), name='obtain-token'),
+    path('api/login/', CustomAuthToken.as_view(), name='api_token_auth'),
 ]

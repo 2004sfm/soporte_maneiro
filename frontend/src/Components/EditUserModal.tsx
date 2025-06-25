@@ -1,31 +1,28 @@
-// src/components/EditUserModal.tsx
 "use client";
 
-import React, { useState, useEffect, FormEvent } from "react"; // Importa useState y useEffect
+import React, { useState, useEffect, FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { showSuccessAlert, showErrorAlert } from "../utils/alerts";
 
-// Define la interfaz UserData con los campos exactos que espera tu API para un usuario
-// Usaremos 'username', 'first_name', 'last_name' como en tu interfaz 'User' de ReportesPage.
-// 'password' es opcional porque no siempre se va a cambiar.
+// Interfaz para el formato de datos de usuario que espera la API
 interface UserAPIFormat {
   username: string;
   first_name: string;
   last_name: string;
-  password?: string; // Opcional para enviar si se cambia
+  password?: string;
 }
 
+// Propiedades del componente EditUserModal
 interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // currentUser ahora es del tipo User, que incluye el 'id'
-  currentUser: {
+  currentUser: { // Datos del usuario actual a editar
     id: string;
     username: string;
     first_name: string;
     last_name: string;
-    // Otros campos que puedas necesitar, como email, etc.
   };
-  onUserUpdated?: () => void; // Callback para notificar al padre sobre la actualización
+  onUserUpdated?: () => void;
 }
 
 export default function EditUserModal({
@@ -34,65 +31,97 @@ export default function EditUserModal({
   currentUser,
   onUserUpdated,
 }: EditUserModalProps) {
-  // Estados para controlar los inputs del formulario
+  // Estados para los campos del formulario
   const [newUsername, setNewUsername] = useState(currentUser.username);
   const [newFirstName, setNewFirstName] = useState(currentUser.first_name);
   const [newLastName, setNewLastName] = useState(currentUser.last_name);
-  const [newPassword, setNewPassword] = useState(""); // La contraseña casi siempre se maneja por separado y se vacía por seguridad
-  const [isSubmitting, setIsSubmitting] = useState(false); // Para deshabilitar el botón durante el envío
+  const [newPassword, setNewPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sincroniza los estados del formulario con las props de currentUser
-  // Esto es crucial para que el modal muestre los datos correctos cada vez que se abre
+  // Sincroniza los estados del formulario con los datos del usuario actual al abrir el modal
   useEffect(() => {
     setNewUsername(currentUser.username);
     setNewFirstName(currentUser.first_name);
     setNewLastName(currentUser.last_name);
-    setNewPassword(""); // Siempre resetea la contraseña al abrir el modal
-  }, [currentUser]); // Se ejecuta cuando el objeto currentUser cambia
+    setNewPassword("");
+  }, [currentUser]);
 
   if (!isOpen) return null;
 
+  // Manejador del envío del formulario
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Datos a enviar a la API
+    // Obtener el token de autenticación
+    const authToken = localStorage.getItem("authToken");
+
+    if (!authToken) {
+      showErrorAlert("No Autenticado", "No estás autenticado para realizar esta acción. Por favor, inicia sesión.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Preparar datos para enviar a la API
     const updatedData: UserAPIFormat = {
       username: newUsername,
       first_name: newFirstName,
       last_name: newLastName,
     };
 
-    // Solo incluye la contraseña si el usuario la ha introducido
+    // Incluir la contraseña solo si se ha modificado
     if (newPassword) {
       updatedData.password = newPassword;
     }
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/users/${currentUser.id}/`, {
-        method: 'PATCH', // O 'PATCH' si tu API de usuarios permite actualizaciones parciales
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          // **IMPORTANTE**: Si tu API requiere un token de autenticación (ej. JWT),
-          // añádelo aquí: 'Authorization': `Bearer ${tuTokenDeAuth}`
+          'Authorization': `Token ${authToken}`, // Incluir el token de autorización
         },
         body: JSON.stringify(updatedData),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(`Error al actualizar usuario: ${res.status} - ${JSON.stringify(errorData)}`);
+      // Manejo de errores de autenticación/permisos
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+        showErrorAlert("Sesión Expirada", "Tu sesión ha expirado o no tienes permisos para actualizar usuarios. Por favor, inicia sesión de nuevo.");
+        onClose();
+        return;
       }
 
-      console.log('✅ Usuario actualizado en el backend:', await res.json());
-      alert('Usuario actualizado con éxito!');
-      onClose(); // Cierra el modal
-      onUserUpdated?.(); // Notifica al padre que la lista debe ser refrescada
-    } catch (error: any) {
-      console.error('❌ Error al actualizar el usuario:', error);
-      alert(`Error al guardar cambios: ${error.message}`);
+      // Manejo de otros errores HTTP
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessageDetail =
+          errorData.detail ||
+          errorData.username?.[0] ||
+          errorData.first_name?.[0] ||
+          errorData.last_name?.[0] ||
+          errorData.password?.[0] ||
+          errorData.non_field_errors?.[0] ||
+          `Error desconocido al actualizar usuario. Código: ${res.status}`;
+        showErrorAlert("Error al Actualizar Usuario", errorMessageDetail);
+        return;
+      }
+
+      await res.json();
+      showSuccessAlert('¡Éxito!', 'Usuario actualizado con éxito!');
+      onClose();
+      onUserUpdated?.();
+    } catch (error: unknown) {
+      let errorMessage = "Error desconocido al guardar cambios.";
+      if (error instanceof Error) {
+        errorMessage = `Error al guardar cambios: ${error.message}`;
+      } else if (typeof error === "string") {
+        errorMessage = `Error al guardar cambios: ${error}`;
+      }
+      showErrorAlert("Error", errorMessage);
     } finally {
-      setIsSubmitting(false); // Habilita el botón de nuevo
+      setIsSubmitting(false);
     }
   };
 
@@ -118,7 +147,7 @@ export default function EditUserModal({
         </button>
 
         <form onSubmit={handleSubmit}>
-          {/* Usuario (Username) */}
+          {/* Campo de Usuario (Username) */}
           <div className="mb-4">
             <label
               htmlFor="username"
@@ -138,7 +167,7 @@ export default function EditUserModal({
             />
           </div>
 
-          {/* Nombre */}
+          {/* Campo de Nombre */}
           <div className="mb-4">
             <label
               htmlFor="first_name"
@@ -158,7 +187,7 @@ export default function EditUserModal({
             />
           </div>
 
-          {/* Apellido */}
+          {/* Campo de Apellido */}
           <div className="mb-4">
             <label
               htmlFor="last_name"
@@ -178,7 +207,7 @@ export default function EditUserModal({
             />
           </div>
 
-          {/* Contraseña (Opcional, solo si se quiere cambiar) */}
+          {/* Campo de Contraseña (Opcional) */}
           <div className="mb-6">
             <label
               htmlFor="password"
@@ -194,10 +223,10 @@ export default function EditUserModal({
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
               className="border border-[#e5e7eb] rounded-lg py-2 px-3 w-full text-sm bg-white focus:border-[#049DD9] focus:ring-3 focus:ring-[#049DD9]/20 outline-none"
-            /> {/* No es 'required' aquí, porque es para cambiar */}
+            />
           </div>
 
-          {/* Botones */}
+          {/* Botones de acción */}
           <div className="flex justify-end gap-3">
             <button
               type="button"

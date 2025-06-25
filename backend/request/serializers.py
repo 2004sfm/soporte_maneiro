@@ -12,6 +12,7 @@ class RequestSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'description',
+            'note',
             'department',
             'department_name',
             'technician',

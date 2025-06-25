@@ -1,10 +1,9 @@
-// src/app/layout.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import Modalinforme from "@/Components/Modalinforme";
 import ProfileDropdown from "@/Components/ProfileDropdown";
+import { useRouter } from "next/navigation";
 
 export default function RootLayout({
   children,
@@ -12,18 +11,50 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  // Verifica el rol del usuario
+  const checkUserRole = () => {
+    const userString = localStorage.getItem("user");
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setIsAdmin(user.is_superuser || false);
+      } catch (e) {
+        console.error("Error al parsear los datos del usuario de localStorage", e);
+        setIsAdmin(false);
+      }
+    } else {
+      setIsAdmin(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUserRole();
+    const handleStorageChange = () => {
+      checkUserRole();
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // const closeModal = () => setIsModalOpen(false);
+
+  // cierre de sesión
   const handleLogout = () => {
-    // lógica de logout aquí
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    setIsAdmin(false);
+    router.push("/");
   };
 
   return (
-
     <body className="min-h-screen bg-blue-500">
-      {/* Header **sin tocar**, con su fondo semitransparente y blur */}
-      <header className="py-3 px-4 md:px-6 bg-[rgba(255,255,255,0.1)] backdrop-blur-md text-white shadow-md relative z-[9999]">
+      <header className="py-3 px-4 md:px-6 bg-[rgba(255,255,255,0.1)] backdrop-blur-md text-white shadow-md relative">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center">
             <Image
@@ -41,23 +72,14 @@ export default function RootLayout({
             </div>
           </div>
           <div className="flex items-center space-x-3">
-            <button
-              onClick={openModal}
-              className="flex items-center bg-gradient-to-r from-[#049DD9] to-[#023059] text-white rounded-lg py-2 px-4 font-semibold hover:shadow-lg transition"
-            >
-              <i className="fas fa-plus-circle mr-2"></i>
-              Generar Reporte
-            </button>
             <ProfileDropdown
-              onCreateInforme={openModal}
-              onCreateReporte={openModal}
+              isAdmin={isAdmin}
               onLogout={handleLogout}
             />
           </div>
         </div>
       </header>
 
-      {/* Solo el main se difumina, el header queda intacto */}
       <main
         className={`container mx-auto p-4 md:p-6 transition-all ${isModalOpen ? "filter blur-md" : ""
           }`}
@@ -65,10 +87,14 @@ export default function RootLayout({
         {children}
       </main>
 
-      {isModalOpen && (
-        <Modalinforme isOpen={isModalOpen} onClose={closeModal} />
-      )}
+      {/* {isModalOpen && (
+        <Modalinforme
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          allDepartments={[]} // Pass your departments data here
+          allTechnicians={[]} // Pass your technicians data here
+        />
+      )} */}
     </body>
-
   );
 }

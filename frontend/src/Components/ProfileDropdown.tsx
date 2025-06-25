@@ -1,22 +1,20 @@
-// src/Components/ProfileDropdown.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 
 interface ProfileDropdownProps {
-  onCreateInforme: () => void;
-  onCreateReporte: () => void;
   onLogout: () => void;
+  isAdmin: boolean;
 }
 
 export default function ProfileDropdown({
-  onCreateInforme,
-  onCreateReporte,
   onLogout,
+  isAdmin,
 }: ProfileDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Cierra el menú al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -40,39 +38,24 @@ export default function ProfileDropdown({
 
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 overflow-hidden">
-          <button
-            onClick={() => {
-              setOpen(false);
-              onCreateInforme();
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-[#023059] hover:bg-[#f9fafb] transition"
-          >
-            <i className="fas fa-file-alt mr-2 text-[#049DD9]"></i>
-            Crear Informe Técnico
-          </button>
-          <button
-            onClick={() => {
-              setOpen(false);
-              onCreateReporte();
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-[#023059] hover:bg-[#f9fafb] transition"
-          >
-            <i className="fas fa-chart-bar mr-2 text-[#049DD9]"></i>
-            Crear Reporte
-          </button>
-          <a href="/Reportes"> <button
-            className="w-full text-left px-4 py-2 text-sm text-[#023059] hover:bg-[#f9fafb] transition"
-          >
-            <i className="fas fa-chart-bar mr-2 text-[#049DD9]"></i>
-            Admin
-          </button>
-          </a>
+          {/* Renderizar botón de Admin solo si el usuario es administrador */}
+          {isAdmin && (
+            <a href="/Reportes">
+              <button className="w-full text-left px-4 py-2 text-sm text-[#023059] hover:bg-[#f9fafb] transition">
+                <i className="fas fa-chart-bar mr-2 text-[#049DD9]"></i>
+                Admin
+              </button>
+            </a>
+          )}
+
           <button
             onClick={() => {
               setOpen(false);
               onLogout();
             }}
-            className="w-full text-left px-4 py-2 text-sm text-[#023059] border-t border-gray-200 hover:bg-[#f9fafb] transition"
+            // Añadir borde superior condicionalmente
+            className={`w-full text-left px-4 py-2 text-sm text-[#023059] hover:bg-[#f9fafb] transition ${isAdmin ? "border-t border-gray-200" : ""
+              }`}
           >
             <i className="fas fa-sign-out-alt mr-2 text-red-500"></i>
             Cerrar Sesión

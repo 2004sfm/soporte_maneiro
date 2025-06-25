@@ -5,6 +5,7 @@ from department.models import Department
 class Request(models.Model):
     subject = models.CharField(max_length=255, verbose_name='Asunto')
     description = models.TextField(verbose_name='Descripción')
+    note = models.TextField(verbose_name='nota')
     # department_id
     department = models.ForeignKey(
         Department,
