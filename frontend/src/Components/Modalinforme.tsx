@@ -15,6 +15,7 @@ interface User {
   first_name: string;
   last_name: string;
   is_staff: boolean;
+  is_superuser?: boolean;
 }
 
 // Estructura de datos para un reporte
@@ -341,9 +342,13 @@ export default function ModalInforme({
                 required
               >
                 <option value="">Selecciona un técnico</option>
-                {allTechnicians.map((tech) => (
-                  <option key={tech.id} value={tech.id}>{tech.first_name} {tech.last_name}</option>
-                ))}
+                {allTechnicians
+                  .filter((tech) => !tech.is_superuser)
+                  .map((tech) => (
+                    <option key={tech.id} value={tech.id}>
+                      {tech.first_name} {tech.last_name}
+                    </option>
+                  ))}
               </select>
             )}
           </div>

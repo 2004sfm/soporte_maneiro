@@ -1,11 +1,9 @@
-// HomePage.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import CardSolution from "@/Components/CardSolution";
 import ModalInforme from "@/Components/Modalinforme";
 import { useRouter } from "next/navigation";
-// Importa tus funciones de alerta directamente
 import { showSuccessAlert, showErrorAlert, showInfoAlert, showConfirmAlert } from "../../utils/alerts";
 
 // Interfaces de datos
