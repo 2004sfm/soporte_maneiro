@@ -346,6 +346,9 @@ export default function ReportesPage() {
     );
   }
 
+  // Filtra el usuario 'admin' de la lista de usuarios a mostrar
+  const filteredUsers = users.filter((user) => user.username !== "admin");
+
   return (
     <main className="relative container mx-auto py-6 px-4 md:px-6">
       {/* Sección para Añadir Departamento */}
@@ -388,8 +391,8 @@ export default function ReportesPage() {
       {/* Lista de Usuarios */}
       <section className="p-4 mb-6 bg-[rgba(255,255,255,0.9)] backdrop-blur-md rounded-xl shadow-sm">
         <h2 className="text-lg font-semibold text-[#023059] mb-4">Usuarios</h2>
-        {users.length > 0 ? (
-          users.map((user) => (
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
             <CardUser
               key={user.id}
               id={user.id}
@@ -403,7 +406,7 @@ export default function ReportesPage() {
             />
           ))
         ) : (
-          <p className="text-gray-500">No hay usuarios disponibles.</p>
+          <p className="text-gray-500">No hay usuarios disponibles para mostrar.</p>
         )}
       </section>
 
