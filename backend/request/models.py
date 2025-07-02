@@ -9,16 +9,14 @@ class Request(models.Model):
     # department_id
     department = models.ForeignKey(
         Department,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         related_name='requests_for_department',
         verbose_name='Departamento'
     )
     # technician_id
     technician = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         related_name='assigned_requests',
         verbose_name='Técnico Asignado'
     )
