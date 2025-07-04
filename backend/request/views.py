@@ -24,6 +24,8 @@ from .filters import RequestFilter
 from department.models import Department
 from django.contrib.auth import get_user_model
 
+from django.utils import timezone
+
 User = get_user_model()
 
 class RequestViewSet(viewsets.ModelViewSet):
@@ -161,7 +163,7 @@ class RequestViewSet(viewsets.ModelViewSet):
                 'subject': report_request.subject,
                 'description': report_request.description,
                 'note': report_request.note,
-                'created_at': report_request.created_at.strftime('%d de %B del %Y'),
+                'created_at': timezone.localtime(report_request.created_at).strftime('%d de %B del %Y'),
                 'department_name': report_request.department.name if report_request.department else 'N/A',
                 'technician_full_name': f"{report_request.technician.first_name} {report_request.technician.last_name}".strip() if report_request.technician else 'N/A',
             }
